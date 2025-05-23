@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -77,20 +78,23 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-analytics.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
+  // Updated Firebase config
   const firebaseConfig = {
-    apiKey: "AIzaSyA8lJkCesjWB9xEUqnD12O6ABLAM1wfIdA",
-    authDomain: "purchase-income-system.firebaseapp.com",
-    projectId: "purchase-income-system",
-    storageBucket: "purchase-income-system.appspot.com",
-    messagingSenderId: "618042535830",
-    appId: "1:618042535830:web:e5ebd7d0d3eaf5a2a4b7b7",
-    measurementId: "G-Y0VZM54V5L"
+    apiKey: "AIzaSyCVt-sSjP35hLkviTbljEXWuRrMNtNhYWA",
+    authDomain: "purchase-income-system-5c457.firebaseapp.com",
+    projectId: "purchase-income-system-5c457",
+    storageBucket: "purchase-income-system-5c457.firebasestorage.app",
+    messagingSenderId: "135329908086",
+    appId: "1:135329908086:web:91703df24378d9a5f76657",
+    measurementId: "G-B7RH5ZQJM3"
   };
 
   const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
   const auth = getAuth(app);
   const db = getFirestore(app);
 
@@ -148,5 +152,5 @@
   }
 </script>
 </body>
-        </html>
-  
+</html>
+
