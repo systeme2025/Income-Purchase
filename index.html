@@ -1,156 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Purchase & Income Record System</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
-    .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input, select, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    table, th, td { border: 1px solid #ddd; }
-    th, td { padding: 10px; text-align: left; }
-    .btn { background: #3498db; color: white; border: none; cursor: pointer; }
-    .btn-logout { background: #e74c3c; }
-    .btn-export { background: #2ecc71; }
-    .link { color: #3498db; cursor: pointer; text-decoration: underline; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h2>Purchase & Income Record System (Admin Controlled)</h2>
-    <div id="authSection">
-      <input type="email" id="authEmail" placeholder="Email" />
-      <input type="password" id="authPassword" placeholder="Password" />
-      <button class="btn" onclick="login()">Login</button>
-      <button class="btn" onclick="showSignup()">Sign Up</button>
-      <p><span class="link" onclick="showPasswordReset()">Forgot Password?</span></p>
-    </div>
-
-    <div id="signupSection" style="display:none;">
-      <input type="email" id="signupEmail" placeholder="Email" />
-      <input type="password" id="signupPassword" placeholder="Password" />
-      <select id="signupRole">
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button class="btn" onclick="signup()">Create Account</button>
-    </div>
-
-    <div id="resetPasswordSection" style="display:none;">
-      <input type="email" id="resetEmail" placeholder="Enter your email" />
-      <button class="btn" onclick="resetPassword()">Send Reset Email</button>
-    </div>
-
-    <div id="mainSection" style="display:none;">
-      <div>
-        <span id="userInfo"></span>
-        <button class="btn btn-logout" onclick="logout()">Logout</button>
-      </div>
-      <hr />
-      <div>
-        <button class="btn" onclick="openPage('purchase')">Purchase Page</button>
-        <button class="btn" onclick="openPage('income')">Income Page</button>
-      </div>
-    </div>
-
-    <div id="purchaseSection" style="display:none;">
-      <h3>Purchase Record</h3>
-      <input type="text" id="buyerInput" placeholder="Buyer Name">
-      <input type="text" id="product" placeholder="Product Name">
-      <input type="number" id="quantity" placeholder="Quantity">
-      <select id="unit">
-        <option value="pcs">pcs</option>
-        <option value="kg">kg</option>
-        <option value="liters">liters</option>
-      </select>
-      <input type="number" id="price" placeholder="Price per unit (RWF)">
-      <input type="date" id="date">
-      <textarea id="comment" placeholder="Comment"></textarea>
-      <button class="btn" onclick="addPurchase()">Add Purchase</button>
-      <table id="purchaseTable"><thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th>Buyer</th><th>Date</th><th>Comment</th></tr></thead><tbody></tbody></table>
-      <div>Grand Total: <span id="totalAmount">0</span> RWF<br>Total by Buyer: <span id="buyerSummary"></span></div>
-    </div>
-
-    <div id="incomeSection" style="display:none;">
-      <h3>Income Record</h3>
-      <input id="fullName" placeholder="Full Name">
-      <input type="number" id="incomeAmount" placeholder="Amount">
-      <input type="date" id="incomeDate">
-      <textarea id="incomeComment" placeholder="Comment"></textarea>
-      <button class="btn" onclick="addIncome()">Add Income</button>
-      <table id="incomeTable"><thead><tr><th>Full Name</th><th>Amount</th><th>Date</th><th>Comment</th></tr></thead><tbody></tbody></table>
-    </div>
-  </div>
-
-<script>
-// REPLACE THESE WITH YOUR ACTUAL FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-let currentUser = null;
-
-function showSignup() {
-  document.getElementById('authSection').style.display = 'none';
-  document.getElementById('signupSection').style.display = 'block';
-}
-
-function signup() {
-  const email = document.getElementById('signupEmail').value;
-  const password = document.getElementById('signupPassword').value;
-  const role = document.getElementById('signupRole').value;
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(cred => db.collection('users').doc(cred.user.uid).set({ role }))
-    .then(() => alert('Signed up successfully'))
-    .catch(error => alert(error.message));
-}
-
-function login() {
-  const email = document.getElementById('authEmail').value;
-  const password = document.getElementById('authPassword').value;
-  auth.signInWithEmailAndPassword(email, password)
-    .then(cred => {
-      currentUser = cred.user;
-      return db.collection('users').doc(currentUser.uid).get();
-    })
-    .then(doc => {
-      const role = doc.data().role;
-      document.getElementById('userInfo').innerHTML = `Logged in as <strong>${email}</strong> [${role}]`;
-      document.getElementById('authSection').style.display = 'none';
-      document.getElementById('signupSection').style.display = 'none';
-      document.getElementById('mainSection').style.display = 'block';
-    })
-    .catch(err => alert(err.message));
-}
-
-function logout() {
-  auth.signOut().then(() => location.reload());
-}
-
-function resetPassword() {
-  const email = document.getElementById('resetEmail').value;
-  auth.sendPasswordResetEmail(email)
-    .then(() => alert('Reset email sent'))
-    .catch(err => alert(err.message));
-}
-
-function showPasswordReset() {
-  document.getElementById('resetPasswordSection').style.display = 'block';
-}
-
-function openPage(page) {
-  const timestamp = new Date().toLocaleString();
 
 <!DOCTYPE html>
 <html lang="en">
@@ -333,4 +180,186 @@ function openPage(page) {
 </body>
 </html>
 
+  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Purchase & Income Record System</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial; background: #f5f5f5; padding: 20px; }
+    .container { background: #fff; border-radius: 8px; padding: 20px; max-width: 900px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, select, button, textarea { width: 100%; padding: 10px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+    .btn { background: #3498db; color: white; border: none; cursor: pointer; }
+    .btn:hover { opacity: 0.9; }
+    .btn-logout { background: #e74c3c; }
+    .btn-export { background: #2ecc71; }
+    table { width: 100%; margin-top: 15px; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; }
+    .link { color: #3498db; cursor: pointer; text-decoration: underline; }
+    .section { display: none; transition: all 0.3s ease; }
+    .section.active { display: block; animation: fadeIn 0.4s ease-in; }
+    @keyframes fadeIn { from {opacity: 0} to {opacity: 1} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Purchase & Income Record System</h2>
 
+    <div id="authSection">
+      <input type="email" id="authEmail" placeholder="Email">
+      <input type="password" id="authPassword" placeholder="Password">
+      <div id="signupRoleSection" style="display:none;">
+        <select id="signupRole">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <button class="btn" onclick="login()">Login</button>
+      <button class="btn" onclick="showSignUp()">Switch to Sign Up</button>
+      <button class="btn" onclick="signup()" id="signupBtn" style="display:none;">Sign Up</button>
+      <p><span class="link" onclick="showPasswordReset()">Forgot Password?</span></p>
+    </div>
+
+    <div id="resetPasswordSection" class="section">
+      <input type="email" id="resetEmail" placeholder="Enter your email" />
+      <button class="btn" onclick="resetPassword()">Send Reset Email</button>
+    </div>
+
+    <div id="mainSection" style="display:none;">
+      <div>
+        <span id="userInfo"></span>
+        <button class="btn btn-logout" onclick="logout()">Logout</button>
+      </div>
+      <hr />
+      <div>
+        <button class="btn" onclick="openPage('purchase')">Purchase Page</button>
+        <button class="btn" onclick="openPage('income')">Income Page</button>
+      </div>
+    </div>
+
+    <div id="purchaseSection" class="section">
+      <h3>Purchase Record</h3>
+      <input type="text" id="buyerInput" placeholder="Buyer Name">
+      <input type="text" id="product" placeholder="Product Name">
+      <input type="number" id="quantity" placeholder="Quantity">
+      <select id="unit"><option>pcs</option><option>kg</option><option>liters</option></select>
+      <input type="number" id="price" placeholder="Price per unit (RWF)">
+      <input type="date" id="date">
+      <textarea id="comment" placeholder="Comment"></textarea>
+      <button class="btn" onclick="addPurchase()">Add Purchase</button>
+      <table id="purchaseTable">
+        <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th>Buyer</th><th>Date</th><th>Comment</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="incomeSection" class="section">
+      <h3>Income Record</h3>
+      <input id="fullName" placeholder="Full Name">
+      <input type="number" id="incomeAmount" placeholder="Amount">
+      <input type="date" id="incomeDate">
+      <textarea id="incomeComment" placeholder="Comment"></textarea>
+      <button class="btn" onclick="addIncome()">Add Income</button>
+      <table id="incomeTable">
+        <thead><tr><th>Name</th><th>Amount</th><th>Date</th><th>Comment</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let currentUser = null;
+
+    function showSignUp() {
+      document.getElementById("signupRoleSection").style.display = "block";
+      document.getElementById("signupBtn").style.display = "inline-block";
+    }
+
+    function signup() {
+      const email = authEmail.value;
+      const password = authPassword.value;
+      const role = document.getElementById("signupRole").value;
+      auth.createUserWithEmailAndPassword(email, password).then(cred => {
+        db.collection("users").doc(cred.user.uid).set({ role });
+        alert("Signed up!");
+      }).catch(err => alert(err.message));
+    }
+
+    function login() {
+      const email = authEmail.value;
+      const password = authPassword.value;
+      auth.signInWithEmailAndPassword(email, password).then(cred => {
+        currentUser = cred.user;
+        db.collection("users").doc(currentUser.uid).get().then(doc => {
+          const role = doc.data().role;
+          document.getElementById("userInfo").innerHTML = `Logged in as <strong>${email}</strong> [${role}]`;
+          document.getElementById("authSection").style.display = "none";
+          document.getElementById("mainSection").style.display = "block";
+        });
+      }).catch(err => alert(err.message));
+    }
+
+    function logout() {
+      auth.signOut().then(() => location.reload());
+    }
+
+    function resetPassword() {
+      const email = document.getElementById('resetEmail').value;
+      auth.sendPasswordResetEmail(email).then(() => alert('Email sent')).catch(err => alert(err.message));
+    }
+
+    function showPasswordReset() {
+      document.getElementById("resetPasswordSection").classList.add("active");
+    }
+
+    function openPage(page) {
+      const time = new Date().toLocaleString();
+      db.collection('logs').add({ user: currentUser.email, page, time });
+      ["purchaseSection", "incomeSection"].forEach(id => document.getElementById(id).classList.remove("active"));
+      document.getElementById(page + "Section").classList.add("active");
+    }
+
+    function addPurchase() {
+      const buyer = buyerInput.value;
+      const product = product.value;
+      const qty = quantity.value;
+      const unit = unit.value;
+      const price = price.value;
+      const total = qty * price;
+      const date = date.value;
+      const comment = comment.value;
+
+      const row = `<tr><td>${product}</td><td>${qty}</td><td>${unit}</td><td>${price}</td><td>${total}</td><td>${buyer}</td><td>${date}</td><td>${comment}</td></tr>`;
+      purchaseTable.querySelector("tbody").innerHTML += row;
+    }
+
+    function addIncome() {
+      const name = fullName.value;
+      const amount = incomeAmount.value;
+      const date = incomeDate.value;
+      const comment = incomeComment.value;
+      const row = `<tr><td>${name}</td><td>${amount}</td><td>${date}</td><td>${comment}</td></tr>`;
+      incomeTable.querySelector("tbody").innerHTML += row;
+    }
+  </script>
+</body>
+</html>
+
+        
