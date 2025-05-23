@@ -1,16 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Purchase & Income Record System</title>
-
-  <!-- Firebase CDN -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-
   <style>
     body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
     .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -26,22 +19,17 @@
 </head>
 <body>
   <div class="container">
-    <h2>Purchase & Income Record System</h2>
-
-    <!-- Auth Section -->
+    <h2>Purchase & Income Record System (Admin Controlled)</h2>
     <div id="authSection">
       <input type="email" id="authEmail" placeholder="Email" />
       <input type="password" id="authPassword" placeholder="Password" />
-      <button class="btn" onclick="login()">Login</button>
-      <button class="btn" onclick="signup()">Sign Up</button>
-      <p><span class="link" onclick="showPasswordReset()">Forgot Password?</span></p>
-    </div>
-
-    <div id="signupRoleSection" style="display:none;">
       <select id="signupRole">
         <option value="user">User</option>
         <option value="admin">Admin</option>
       </select>
+      <button class="btn" onclick="signup()">Sign Up</button>
+      <button class="btn" onclick="login()">Login</button>
+      <p><span class="link" onclick="showPasswordReset()">Forgot Password?</span></p>
     </div>
 
     <div id="resetPasswordSection" style="display:none;">
@@ -61,7 +49,6 @@
       </div>
     </div>
 
-    <!-- Purchase Section -->
     <div id="purchaseSection" style="display:none;">
       <h3>Purchase Record</h3>
       <input type="text" id="buyerInput" placeholder="Buyer Name">
@@ -75,116 +62,91 @@
       <input type="number" id="price" placeholder="Price per unit (RWF)">
       <input type="date" id="date">
       <textarea id="comment" placeholder="Comment"></textarea>
-      <button class="btn" onclick="addPurchase()">Add Purchase</button>
-
-      <table id="purchaseTable">
-        <thead><tr><th>Product</th><th>Qty</th><th>Unit</th><th>Price</th><th>Total</th><th>Buyer</th><th>Date</th><th>Comment</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <button class="btn">Add Purchase</button>
     </div>
 
-    <!-- Income Section -->
     <div id="incomeSection" style="display:none;">
       <h3>Income Record</h3>
       <input id="fullName" placeholder="Full Name">
       <input type="number" id="incomeAmount" placeholder="Amount">
       <input type="date" id="incomeDate">
       <textarea id="incomeComment" placeholder="Comment"></textarea>
-      <button class="btn" onclick="addIncome()">Add Income</button>
-
-      <table id="incomeTable">
-        <thead><tr><th>Full Name</th><th>Amount</th><th>Date</th><th>Comment</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <button class="btn">Add Income</button>
     </div>
   </div>
 
-  <script>
-    // Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyA8lJkCesjWB9xEUqnD12O6ABLAM1wfIdA",
-      authDomain: "purchase-income-system.firebaseapp.com",
-      projectId: "purchase-income-system",
-      storageBucket: "purchase-income-system.appspot.com",
-      messagingSenderId: "618042535830",
-      appId: "1:618042535830:web:e5ebd7d0d3eaf5a2a4b7b7",
-      measurementId: "G-Y0VZM54V5L"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-    let currentUser = null;
+  const firebaseConfig = {
+    apiKey: "AIzaSyA8lJkCesjWB9xEUqnD12O6ABLAM1wfIdA",
+    authDomain: "purchase-income-system.firebaseapp.com",
+    projectId: "purchase-income-system",
+    storageBucket: "purchase-income-system.appspot.com",
+    messagingSenderId: "618042535830",
+    appId: "1:618042535830:web:e5ebd7d0d3eaf5a2a4b7b7",
+    measurementId: "G-Y0VZM54V5L"
+  };
 
-    function signup() {
-      const email = document.getElementById('authEmail').value;
-      const password = document.getElementById('authPassword').value;
-      const role = document.getElementById('signupRole').value;
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(cred => db.collection('users').doc(cred.user.uid).set({ role }))
-        .then(() => alert("Signed up successfully"))
-        .catch(err => alert(err.message));
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let currentUser = null;
+
+  window.signup = async function () {
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    const role = document.getElementById('signupRole').value;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, 'users', cred.user.uid), { role });
+      alert("User registered");
+    } catch (error) {
+      alert(error.message);
     }
+  }
 
-    function login() {
-      const email = document.getElementById('authEmail').value;
-      const password = document.getElementById('authPassword').value;
-      auth.signInWithEmailAndPassword(email, password)
-        .then(cred => {
-          currentUser = cred.user;
-          return db.collection('users').doc(currentUser.uid).get();
-        })
-        .then(doc => {
-          const role = doc.data().role;
-          document.getElementById('userInfo').innerHTML = `Logged in as <strong>${currentUser.email}</strong> [${role}]`;
-          document.getElementById('authSection').style.display = 'none';
-          document.getElementById('signupRoleSection').style.display = 'none';
-          document.getElementById('mainSection').style.display = 'block';
-        })
-        .catch(err => alert(err.message));
+  window.login = async function () {
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      currentUser = cred.user;
+      const docRef = doc(db, 'users', currentUser.uid);
+      const docSnap = await getDoc(docRef);
+      document.getElementById('userInfo').innerHTML = `Logged in as <strong>${email}</strong> [${docSnap.data().role}]`;
+      document.getElementById('authSection').style.display = 'none';
+      document.getElementById('mainSection').style.display = 'block';
+    } catch (err) {
+      alert(err.message);
     }
+  }
 
-    function logout() {
-      auth.signOut().then(() => location.reload());
-    }
+  window.resetPassword = function () {
+    const email = document.getElementById('resetEmail').value;
+    sendPasswordResetEmail(auth, email).then(() => {
+      alert('Reset email sent');
+    }).catch(err => alert(err.message));
+  }
 
-    function resetPassword() {
-      const email = document.getElementById('resetEmail').value;
-      auth.sendPasswordResetEmail(email)
-        .then(() => alert('Password reset email sent'))
-        .catch(err => alert(err.message));
-    }
+  window.showPasswordReset = function () {
+    document.getElementById('resetPasswordSection').style.display = 'block';
+  }
 
-    function showPasswordReset() {
-      document.getElementById('resetPasswordSection').style.display = 'block';
-    }
+  window.logout = function () {
+    signOut(auth).then(() => location.reload());
+  }
 
-    function openPage(page) {
-      document.getElementById('purchaseSection').style.display = page === 'purchase' ? 'block' : 'none';
-      document.getElementById('incomeSection').style.display = page === 'income' ? 'block' : 'none';
-    }
-
-    function addPurchase() {
-      const buyer = document.getElementById('buyerInput').value;
-      const product = document.getElementById('product').value;
-      const quantity = parseFloat(document.getElementById('quantity').value);
-      const unit = document.getElementById('unit').value;
-      const price = parseFloat(document.getElementById('price').value);
-      const date = document.getElementById('date').value;
-      const comment = document.getElementById('comment').value;
-      const total = quantity * price;
-      db.collection('purchases').add({ buyer, product, quantity, unit, price, date, comment, total })
-        .then(() => alert('Purchase added'));
-    }
-
-    function addIncome() {
-      const fullName = document.getElementById('fullName').value;
-      const amount = parseFloat(document.getElementById('incomeAmount').value);
-      const date = document.getElementById('incomeDate').value;
-      const comment = document.getElementById('incomeComment').value;
-      db.collection('incomes').add({ fullName, amount, date, comment })
-        .then(() => alert('Income added'));
-    }
-  </script>
+  window.openPage = function (page) {
+    document.getElementById('purchaseSection').style.display = 'none';
+    document.getElementById('incomeSection').style.display = 'none';
+    if (page === 'purchase') document.getElementById('purchaseSection').style.display = 'block';
+    else if (page === 'income') document.getElementById('incomeSection').style.display = 'block';
+  }
+</script>
 </body>
-</html
+        </html>
+  
